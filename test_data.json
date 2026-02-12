@@ -1,0 +1,119 @@
+{
+  "region_ids": {
+    "andijon": 347,
+    "buxoro": 4,
+    "fargona": 5,
+    "jizzax": 2,
+    "namangan": 9,
+    "navoiy": 6,
+    "qashqadaryo": 349,
+    "karakalpakstan": 8,
+    "samarqand": 10,
+    "sirdaryo": 3,
+    "surxondaryo": 170,
+    "tashkent_city": 1,
+    "tashkent_region": 12,
+    "xorazm": 348
+  },
+  "test_scenarios": {
+    "valid_city_queries": [
+      {"city": 1, "description": "Tashkent city"},
+      {"city": 347, "description": "Andijon region"},
+      {"city": 10, "description": "Samarqand region"}
+    ],
+    "invalid_city_queries": [
+      {"city": -1, "description": "Negative ID"},
+      {"city": 0, "description": "Zero ID"},
+      {"city": 99999, "description": "Non-existent ID"},
+      {"city": "invalid", "description": "String value"}
+    ],
+    "price_ranges": [
+      {"price_min": 100000, "price_max": 500000, "description": "Low range"},
+      {"price_min": 500000, "price_max": 1000000, "description": "Medium range"},
+      {"price_min": 1000000, "price_max": 5000000, "description": "High range"},
+      {"price_min": 5000000, "price_max": 10000000, "description": "Premium range"}
+    ],
+    "search_terms": [
+      {"term": "kvartira", "description": "Apartment in Latin"},
+      {"term": "квартира", "description": "Apartment in Cyrillic"},
+      {"term": "uy", "description": "House in Uzbek"},
+      {"term": "joy", "description": "Place/Room in Uzbek"},
+      {"term": "ijaraga", "description": "For rent"},
+      {"term": "sotiladi", "description": "For sale"}
+    ],
+    "time_ranges": [
+      {"days_back": 1, "description": "Last 24 hours"},
+      {"days_back": 7, "description": "Last week"},
+      {"days_back": 30, "description": "Last month"},
+      {"days_back": 90, "description": "Last 3 months"}
+    ],
+    "pagination": [
+      {"page": 1, "per_page": 10, "description": "First page, 10 items"},
+      {"page": 1, "per_page": 20, "description": "First page, 20 items"},
+      {"page": 2, "per_page": 10, "description": "Second page, 10 items"},
+      {"page": 1, "per_page": 50, "description": "First page, 50 items"}
+    ],
+    "combined_filters": [
+      {
+        "city": 1,
+        "price_min": 200000,
+        "price_max": 800000,
+        "search": "kvartira",
+        "description": "Tashkent apartments 200k-800k"
+      },
+      {
+        "city": 10,
+        "price_min": 150000,
+        "price_max": 500000,
+        "description": "Samarqand properties 150k-500k"
+      },
+      {
+        "search": "uy",
+        "price_min": 300000,
+        "description": "Houses above 300k"
+      }
+    ]
+  },
+  "expected_responses": {
+    "success": {
+      "success": true,
+      "errors": {},
+      "message": "OK"
+    },
+    "validation_error": {
+      "success": false,
+      "errors": {},
+      "message": "Validation error"
+    },
+    "unauthorized": {
+      "success": false,
+      "message": "Authentication required"
+    }
+  },
+  "performance_thresholds": {
+    "basic_query_max_time": 2.0,
+    "complex_query_max_time": 3.0,
+    "pagination_max_time": 2.5
+  },
+  "edge_cases": {
+    "boundary_values": [
+      {"price_min": 0, "price_max": 0},
+      {"price_min": 1, "price_max": 999999999999},
+      {"page": 1, "per_page": 1},
+      {"page": 99999, "per_page": 1}
+    ],
+    "special_characters_search": [
+      "@#$%",
+      "test@example.com",
+      "123-456-7890",
+      "test & test",
+      "test | test"
+    ],
+    "sql_injection_attempts": [
+      "'; DROP TABLE locations; --",
+      "1' OR '1'='1",
+      "admin'--",
+      "' UNION SELECT * FROM users--"
+    ]
+  }
+}
