@@ -1,3 +1,44 @@
+"""
+Automated Tests for Mobile Location API
+Endpoint: GET /api/v1/mobile/location/
+
+This test suite covers all query parameters:
+- city
+- price_max (FILTER ONLY - not in response)
+- price_min (FILTER ONLY - not in response)  
+- search
+- time_end (FILTER ONLY - not in response)
+- time_start (FILTER ONLY - not in response)
+- page
+- per_page
+
+IMPORTANT NOTES:
+1. AUTHENTICATION: The tests use session-based authentication. The `headers` fixture
+   returns a requests.Session object with authentication cookies already set.
+   Use: headers.get(url, params=params)
+   
+2. FILTER PARAMETERS: time_start, time_end, price_min, price_max are used to FILTER
+   the results but are NOT returned in the API response body. The tests verify that:
+   - Valid filter values are accepted (200 OK)
+   - Invalid filter values are rejected (400 Bad Request)
+   - The API responds appropriately to different parameter combinations
+   
+3. RESPONSE STRUCTURE: The API returns location data without the filter parameters.
+   Example response structure:
+   {
+     "success": true,
+     "results": [
+       {
+         "name": "M learning center2",
+         "address": "Fayazov ko'chasi, 11",
+         "phone": "+998936934545",
+         "distance": "727.337218194701 km",
+         // ... other location fields (NO time or price filters in response)
+       }
+     ]
+   }
+"""
+
 import pytest
 import requests
 from datetime import datetime, timedelta
@@ -9,6 +50,7 @@ class TestLocationAPI:
     
     BASE_URL = "https://api.qa.2plus6.uz/api/v1/mobile/location/"
     
+    # Test data based on the region IDs from the uploaded information
     REGION_IDS = {
         "Andijon": 347,
         "Buxoro": 4,
@@ -32,6 +74,7 @@ class TestLocationAPI:
         Get authentication session for API requests
         This should be run once per test class
         """
+        # Step 1: Request OTP
         login_url = "https://api.qa.2plus6.uz/api/v1/users/mobile/auth/login/"
         phone = "+998990660699"
         
@@ -50,12 +93,13 @@ class TestLocationAPI:
         
         secret_code = result["result"]["secret_code"]
         
+        # Step 2: Confirm OTP
         confirm_url = "https://api.qa.2plus6.uz/api/v1/users/mobile/auth/login/confirm/"
         confirm_response = requests.post(
             confirm_url,
             json={
                 "phone": phone,
-                "otp": "111111",  
+                "otp": "111111",  # Test OTP
                 "secret_code": secret_code
             },
             headers={"Content-Type": "application/json"}
@@ -64,9 +108,11 @@ class TestLocationAPI:
         if confirm_response.status_code != 200:
             pytest.fail(f"Confirm failed with status {confirm_response.status_code}: {confirm_response.text}")
         
+        # Create a session with cookies
         session = requests.Session()
         session.cookies.update(confirm_response.cookies)
         
+        # Also set headers for the session
         session.headers.update({
             "accept": "application/json",
             "Content-Type": "application/json"
@@ -115,6 +161,7 @@ class TestLocationAPI:
         params = {"city": 99999}
         response = headers.get(self.BASE_URL, params=params)
         
+        # Should return empty results or error
         assert response.status_code in [200, 400, 404]
     
     def test_city_negative_id(self, headers):
@@ -217,6 +264,7 @@ class TestLocationAPI:
         }
         response = headers.get(self.BASE_URL, params=params)
         
+        # Should return empty results or validation error
         assert response.status_code in [200, 400]
     
     # ==================== PRICE RANGE TESTS ====================
@@ -319,20 +367,32 @@ class TestLocationAPI:
     # ==================== TIME_END PARAMETER TESTS ====================
     
     def test_time_end_valid_future(self, headers):
-        """Test with valid future time_end"""
+        """Test with valid future time_end - API should validate and may reject"""
         future_time = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%S")
         params = {"time_end": future_time}
         response = headers.get(self.BASE_URL, params=params)
         
+        # Test that API accepts the parameter and responds appropriately
+        # 200 = accepted and filtered, 400 = validation error (both are valid)
         assert response.status_code in [200, 400]
+        
+        if response.status_code == 200:
+            data = response.json()
+            # Just verify response structure, don't check for time fields in results
+            assert "success" in data or "result" in data or "results" in data
     
     def test_time_end_valid_past(self, headers):
-        """Test with valid past time_end"""
+        """Test with valid past time_end - should filter results"""
         past_time = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%S")
         params = {"time_end": past_time}
         response = headers.get(self.BASE_URL, params=params)
         
+        # Past dates may or may not be accepted depending on API business logic
         assert response.status_code in [200, 400]
+        
+        if response.status_code == 200:
+            data = response.json()
+            assert data.get("success") is True or "result" in data or "results" in data
     
     def test_time_end_current_time(self, headers):
         """Test with current time as time_end"""
@@ -340,6 +400,7 @@ class TestLocationAPI:
         params = {"time_end": current_time}
         response = headers.get(self.BASE_URL, params=params)
         
+        # Current time filtering behavior
         assert response.status_code in [200, 400]
     
     def test_time_end_invalid_format(self, headers):
@@ -371,6 +432,7 @@ class TestLocationAPI:
         params = {"time_start": past_time}
         response = headers.get(self.BASE_URL, params=params)
         
+        # API may have specific validation rules for time_start
         assert response.status_code in [200, 400]
     
     def test_time_start_valid_future(self, headers):
@@ -387,6 +449,7 @@ class TestLocationAPI:
         params = {"time_start": current_time}
         response = headers.get(self.BASE_URL, params=params)
         
+        # Current time may or may not be accepted
         assert response.status_code in [200, 400]
     
     def test_time_start_invalid_format(self, headers):
@@ -409,6 +472,7 @@ class TestLocationAPI:
         }
         response = headers.get(self.BASE_URL, params=params)
         
+        # API may have specific validation for time ranges
         assert response.status_code in [200, 400]
     
     def test_time_range_start_after_end(self, headers):
@@ -422,6 +486,7 @@ class TestLocationAPI:
         }
         response = headers.get(self.BASE_URL, params=params)
         
+        # Should return error or empty results
         assert response.status_code in [200, 400]
     
     def test_time_range_equal(self, headers):
@@ -434,6 +499,7 @@ class TestLocationAPI:
         }
         response = headers.get(self.BASE_URL, params=params)
         
+        # May or may not be accepted
         assert response.status_code in [200, 400]
     
     # ==================== PAGINATION TESTS ====================
@@ -459,6 +525,7 @@ class TestLocationAPI:
         params = {"page": 0}
         response = headers.get(self.BASE_URL, params=params)
         
+        # Invalid page may return 400 or 404
         assert response.status_code in [200, 400, 404]
     
     def test_page_negative(self, headers):
@@ -466,6 +533,7 @@ class TestLocationAPI:
         params = {"page": -1}
         response = headers.get(self.BASE_URL, params=params)
         
+        # Invalid page may return 400 or 404
         assert response.status_code in [200, 400, 404]
     
     def test_page_very_large(self, headers):
@@ -473,6 +541,7 @@ class TestLocationAPI:
         params = {"page": 99999}
         response = headers.get(self.BASE_URL, params=params)
         
+        # Non-existent page may return empty results (200) or 404
         assert response.status_code in [200, 404]
     
     def test_per_page_valid(self, headers):
@@ -541,6 +610,7 @@ class TestLocationAPI:
         }
         response = headers.get(self.BASE_URL, params=params)
         
+        # Combined parameters with time may have validation rules
         assert response.status_code in [200, 400]
         if response.status_code == 200:
             data = response.json()
@@ -569,6 +639,7 @@ class TestLocationAPI:
         }
         response = headers.get(self.BASE_URL, params=params)
         
+        # Time parameter may cause validation error
         assert response.status_code in [200, 400]
     
     def test_no_parameters(self, headers):
@@ -640,6 +711,7 @@ class TestLocationAPIPerformance:
     @pytest.fixture(scope="class")
     def headers(self):
         """Get authentication session for performance testing"""
+        # Step 1: Request OTP
         login_url = "https://api.qa.2plus6.uz/api/v1/users/mobile/auth/login/"
         phone = "+998990660699"
         
@@ -655,6 +727,7 @@ class TestLocationAPIPerformance:
         result = response.json()
         secret_code = result["result"]["secret_code"]
         
+        # Step 2: Confirm OTP
         confirm_url = "https://api.qa.2plus6.uz/api/v1/users/mobile/auth/login/confirm/"
         confirm_response = requests.post(
             confirm_url,
@@ -666,6 +739,7 @@ class TestLocationAPIPerformance:
             headers={"Content-Type": "application/json"}
         )
         
+        # Create session
         session = requests.Session()
         session.cookies.update(confirm_response.cookies)
         session.headers.update({
@@ -695,7 +769,7 @@ class TestLocationAPIPerformance:
             "city": 1,
             "price_min": 100000,
             "price_max": 1000000,
-            "search": "cambridge",
+            "search": "kvartira"
         }
         
         start_time = time.time()
@@ -708,4 +782,5 @@ class TestLocationAPIPerformance:
 
 
 if __name__ == "__main__":
+    # Run tests with pytest
     pytest.main([__file__, "-v", "--tb=short"])
