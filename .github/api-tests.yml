@@ -2,9 +2,9 @@ name: API Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ master ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ master ]
   schedule:
     - cron: '0 */6 * * *'  # Run every 6 hours
 
