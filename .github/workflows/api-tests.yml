@@ -2,7 +2,7 @@ name: API Tests CI/CD
 
 on:
   push:
-    branches: [ dashbord ]          
+    branches: [ dashbord ]         
   pull_request:
     branches: [ dashbord ]
   schedule:
@@ -10,9 +10,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  checks: write         
+  checks: write          
   contents: read
-  actions: read          
+  pull-requests: write   
 
 jobs:
   test:
@@ -20,6 +20,7 @@ jobs:
     permissions:
       checks: write
       contents: read
+      pull-requests: write
 
     strategy:
       matrix:
@@ -39,7 +40,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest-html  # если ещё не стоит
+          # Убедись, что pytest-html установлен (обычно идёт с pytest, но на всякий случай)
+          pip install pytest-html
 
       - name: Create test-results directory
         run: mkdir -p test-results
@@ -90,8 +92,9 @@ jobs:
         with:
           files: test-results/*.xml
           check_name: API Tests (Python ${{ matrix.python-version }})
-          comment_mode: create  # или off, если не нужны комментарии в PR
-          fail_on: test failures
+          comment_mode: off               # без комментариев в PR (можно потом поменять на 'failures' или 'always')
+          fail_on: test failures          # job упадёт, если есть проваленные тесты (опционально)
+          action_fail: false              # не ломать весь workflow, если тесты упали
 
   daily-report:
     runs-on: ubuntu-latest
@@ -133,8 +136,8 @@ jobs:
       - name: Test Status Notification
         run: |
           if [ "${{ needs.test.result }}" = "success" ]; then
-            echo " All tests passed!"
+            echo " Все тесты прошли успешно!"
           else
-            echo " Some tests failed or were skipped!"
-            echo "Check the published test results in the Checks tab."
+            echo " Некоторые тесты упали или были пропущены"
+            echo "Смотри результаты в разделе Checks / Summary"
           fi
