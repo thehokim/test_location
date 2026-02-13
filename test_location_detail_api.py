@@ -1,16 +1,3 @@
-"""
-Automated Tests for Mobile Location Detail API
-Endpoint: GET /api/v1/mobile/location/{id}/
-
-This test suite covers the location detail endpoint that returns
-full information about a specific location including:
-- Basic info (name, phone, description, address)
-- Courses with pricing
-- Working days/hours schedule
-- Gallery images
-- Distance
-"""
-
 import pytest
 import requests
 from typing import Dict

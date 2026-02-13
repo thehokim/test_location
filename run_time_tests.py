@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-"""
-Run ONLY Time Parameter Tests with Detailed Report
-"""
-
 import subprocess
 import sys
 
