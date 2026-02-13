@@ -1,0 +1,90 @@
+{
+  "generated_at": "2026-02-13T11:58:38.504537",
+  "total_students": 0,
+  "regions": [
+    {
+      "region": "Andijon",
+      "region_id": 347,
+      "student_count": null,
+      "status": "✅ OK"
+    },
+    {
+      "region": "Bukhara",
+      "region_id": 4,
+      "student_count": null,
+      "status": "✅ OK"
+    },
+    {
+      "region": "Fergana",
+      "region_id": 5,
+      "student_count": null,
+      "status": "✅ OK"
+    },
+    {
+      "region": "Jizzakh",
+      "region_id": 2,
+      "student_count": null,
+      "status": "✅ OK"
+    },
+    {
+      "region": "Karakalpakstan",
+      "region_id": 8,
+      "student_count": null,
+      "status": "✅ OK"
+    },
+    {
+      "region": "Namangan",
+      "region_id": 9,
+      "student_count": null,
+      "status": "✅ OK"
+    },
+    {
+      "region": "Navoiy",
+      "region_id": 6,
+      "student_count": null,
+      "status": "✅ OK"
+    },
+    {
+      "region": "Qashqadaryo",
+      "region_id": 349,
+      "student_count": null,
+      "status": "✅ OK"
+    },
+    {
+      "region": "Samarqand",
+      "region_id": 10,
+      "student_count": null,
+      "status": "✅ OK"
+    },
+    {
+      "region": "Sirdaryo",
+      "region_id": 3,
+      "student_count": null,
+      "status": "✅ OK"
+    },
+    {
+      "region": "Surxondaryo",
+      "region_id": 170,
+      "student_count": null,
+      "status": "✅ OK"
+    },
+    {
+      "region": "Tashkent",
+      "region_id": 1,
+      "student_count": null,
+      "status": "✅ OK"
+    },
+    {
+      "region": "Tashkent Region",
+      "region_id": 12,
+      "student_count": null,
+      "status": "✅ OK"
+    },
+    {
+      "region": "Xorazm",
+      "region_id": 348,
+      "student_count": null,
+      "status": "✅ OK"
+    }
+  ]
+}

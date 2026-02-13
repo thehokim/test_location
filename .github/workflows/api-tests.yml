@@ -1,0 +1,123 @@
+name: API Tests CI/CD
+
+on:
+  push:
+    branches: [ dashbord ]
+  pull_request:
+    branches: [ dashbord ]
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:  
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    
+    steps:
+    - name:  Checkout code
+      uses: actions/checkout@v4
+    
+    - name:  Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name:  Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name:  Run Location List API Tests
+      run: |
+        pytest test_location_api.py -v --html=report_location_list.html --self-contained-html
+      continue-on-error: true
+    
+    - name:  Run Location Detail API Tests
+      run: |
+        pytest test_location_detail_api.py -v --html=report_location_detail.html --self-contained-html
+      continue-on-error: true
+    
+    - name:  Run Agency Statistics API Tests
+      run: |
+        pytest test_agency_statistics_api.py -v --html=report_statistics.html --self-contained-html
+      continue-on-error: true
+    
+    - name:  Generate Student Count Report
+      run: |
+        pytest test_student_count_by_region.py -v -s --html=report_student_count.html --self-contained-html
+      continue-on-error: true
+    
+    - name:  Upload Test Reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-reports-python-${{ matrix.python-version }}
+        path: |
+          report_*.html
+          student_count_report_*.json
+          student_count_report_*.txt
+        retention-days: 30
+    
+    - name:  Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: |
+          **/test-results/*.xml
+        check_name: Test Results (Python ${{ matrix.python-version }})
+
+  daily-report:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    needs: test
+    
+    steps:
+    - name:  Checkout code
+      uses: actions/checkout@v4
+    
+    - name:  Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+    
+    - name:  Install dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name:  Generate Daily Student Report
+      run: |
+        python run_student_count_report.py
+    
+    - name:  Send Report (Optional)
+      run: |
+        echo "Daily report generated at $(date)"
+        # Add email/Slack notification here if needed
+    
+    - name:  Archive Daily Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: daily-student-report-${{ github.run_number }}
+        path: |
+          student_count_report_*.json
+          student_count_report_*.txt
+        retention-days: 90
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    
+    steps:
+    - name:  Test Status Notification
+      run: |
+        if [ "${{ needs.test.result }}" == "success" ]; then
+          echo " All tests passed!"
+        else
+          echo " Some tests failed!"
+        fi
